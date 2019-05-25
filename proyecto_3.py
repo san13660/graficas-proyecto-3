@@ -4,18 +4,37 @@
 import pygame
 from math import pi, cos, sin, atan2
 
-input_1 = input('Mostrar mapa? (s/n): ')
-
 show_map = False
+
+window_width = 530
+window_height = 400
+window_largest_dimension = 530
+
+input_1 = input('Mostrar mapa? (s/n): ')
+input_2 = input('Resolucion default? (530x400) (s/n): ')
+
 if input_1 == 's':
   show_map = True
+
+if input_2 == 'n':
+  input_3 = input('Ingrese el ancho: ')
+  input_4 = input('Ingrese el alto: ')
+
+  try:
+    input_3 = int(input_3)
+    input_4 = int(input_4)
+    window_width = input_3
+    window_height = input_4
+    window_largest_dimension = input_4
+
+  except:
+    print('Resolucion invalida. Ejecutando con resolucion default (530x400).')
 
 
 floor_color = (60, 40, 15)
 ceiling_color = (60, 60, 60)
 
-window_width = 530
-window_height = 400
+
 
 hand_width = 132
 hand_height = 132
@@ -143,29 +162,31 @@ class Raycaster(object):
       self.point(x, y, c)
 
   def draw_sprite(self, sprite, sprite_height=160, sprite_width=160):
-    sprite_a = atan2(sprite["y"] - self.player["y"], sprite["x"] - self.player["x"])   # why atan2? https://stackoverflow.com/a/12011762
+    sprite_a = atan2(sprite["y"] - self.player["y"], sprite["x"] - self.player["x"])
 
     sprite_d = ((self.player["x"] - sprite["x"])**2 + (self.player["y"] - sprite["y"])**2)**0.5
-    sprite_size = (window_width/sprite_d) * 70
+    #print(sprite_d)
+    if sprite_d > 20:
+      sprite_size = (window_height/sprite_d) * 70
 
-    sprite_x = offset + (sprite_a - self.player["a"])*window_width/self.player["fov"] + (window_width/2) - sprite_size/2
-    sprite_y = (window_height/2) - sprite_size/2
+      sprite_x = offset + (sprite_a - self.player["a"])*window_width/self.player["fov"] + (window_width/2) - sprite_size/2
+      sprite_y = (window_height/2) - sprite_size/2
 
-    sprite_x = int(sprite_x)
-    sprite_y = int(sprite_y)
-    sprite_size = int(sprite_size)
+      sprite_x = int(sprite_x)
+      sprite_y = int(sprite_y)
+      sprite_size = int(sprite_size)
 
-    for x in range(sprite_x, sprite_x + sprite_size):
-      for y in range(sprite_y, sprite_y + sprite_size):
-        if offset < x < offset + window_width and self.zbuffer[x - offset] >= sprite_d:
-          tx = int((x - sprite_x) * sprite_width/sprite_size)
-          ty = int((y - sprite_y) * sprite_height/sprite_size)
-          c = sprite["texture"].get_at((tx, ty))
-          if c != (18, 249, 155, 255):
-            self.point(x, y, c)
-            self.zbuffer[x - window_width] = sprite_d
+      for x in range(sprite_x, sprite_x + sprite_size):
+        for y in range(sprite_y, sprite_y + sprite_size):
+          if offset < x < offset + window_width and self.zbuffer[x - offset] >= sprite_d:
+            tx = int((x - sprite_x) * sprite_width/sprite_size)
+            ty = int((y - sprite_y) * sprite_height/sprite_size)
+            c = sprite["texture"].get_at((tx, ty))
+            if c != (18, 249, 155, 255):
+              self.point(x, y, c)
+              self.zbuffer[x - window_width] = sprite_d
 
-  def draw_player(self, xi, yi, w = int(window_height/2.2), h = int(window_height/2.2)):
+  def draw_player(self, xi, yi, w = hand_width, h = hand_height):
     for x in range(xi, xi + w):
       for y in range(yi, yi + h):
         tx = int((x - xi) * hand_width/w)
@@ -194,26 +215,32 @@ class Raycaster(object):
       a =  self.player["a"] - self.player["fov"]/2 + self.player["fov"]*i/window_width
       d, c, tx = self.cast_ray(a)
       x = offset + i
-      factor = (d*cos(a-self.player["a"]))
-      if(factor >= 1):
+      if(d >= 10):
+        factor = (d*cos(a-self.player["a"]))
         h = window_height/factor * 70
         self.draw_stake(x, h, textures[c], tx)
         self.zbuffer[i] = d
+      else:
+        break
 
     for enemy in enemies:
       if show_map:
         self.point(enemy["x"], enemy["y"], (250, 0, 0))
       self.draw_sprite(enemy)
 
-    self.draw_player(offset + window_width - int(window_height/2.2) - 128, window_height - int(window_height/2.2))
+    player_draw_width = int(window_width/3)
+    player_draw_height = int(window_width/3)
+
+    self.draw_player(int(offset + (window_width/2) - (player_draw_width/2.5)), window_height - player_draw_height, player_draw_width, player_draw_height)
 
 r = Raycaster(screen)
 r.load_map('./map.txt')
 
 c = 0
 while True:
-  r.clear()
-  r.render(show_map)
+
+  player_x_movement = 0
+  player_y_movement = 0
 
   for e in pygame.event.get():
     if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
@@ -225,16 +252,28 @@ while True:
         r.player["a"] += pi/10
 
       elif e.key == pygame.K_d:
-        r.player["y"] += sin(r.player["a"]+pi/2) * player_speed
-        r.player["x"] += cos(r.player["a"]+pi/2) * player_speed
+        player_y_movement = sin(r.player["a"]+pi/2) * player_speed
+        player_x_movement = cos(r.player["a"]+pi/2) * player_speed
       elif e.key == pygame.K_a:
-        r.player["y"] += sin(r.player["a"]-pi/2) * player_speed
-        r.player["x"] += cos(r.player["a"]-pi/2) * player_speed
+        player_y_movement = sin(r.player["a"]-pi/2) * player_speed
+        player_x_movement = cos(r.player["a"]-pi/2) * player_speed
       elif e.key == pygame.K_w:
-        r.player["y"] += sin(r.player["a"]) * player_speed
-        r.player["x"] += cos(r.player["a"]) * player_speed
+        player_y_movement = sin(r.player["a"]) * player_speed
+        player_x_movement = cos(r.player["a"]) * player_speed
       elif e.key == pygame.K_s:
-        r.player["y"] -= sin(r.player["a"]) * player_speed
-        r.player["x"] -= cos(r.player["a"]) * player_speed
+        player_y_movement = -sin(r.player["a"]) * player_speed
+        player_x_movement = -cos(r.player["a"]) * player_speed
+
+  distance_check = r.cast_ray(r.player["a"])[0]
+
+  if distance_check > 40:
+    r.player["x"] += player_x_movement
+    r.player["y"] += player_y_movement
+  else:
+    r.player["x"] -= player_x_movement
+    r.player["y"] -= player_y_movement
+
+  r.clear()
+  r.render(show_map)
 
   pygame.display.flip()
