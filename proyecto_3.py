@@ -8,27 +8,28 @@ show_map = False
 
 window_width = 530
 window_height = 400
-window_largest_dimension = 530
 
 input_1 = input('Mostrar mapa? (s/n): ')
-input_2 = input('Resolucion default? (530x400) (s/n): ')
 
 if input_1 == 's':
   show_map = True
+  window_height = 500
+  window_width = 500
+  print('Forzando resolucion (1000x500)')
+else:
+  input_2 = input('Resolucion default? (530x400) (s/n): ')
+  if input_2 == 'n':
+    input_3 = input('Ingrese el ancho: ')
+    input_4 = input('Ingrese el alto: ')
 
-if input_2 == 'n':
-  input_3 = input('Ingrese el ancho: ')
-  input_4 = input('Ingrese el alto: ')
+    try:
+      input_3 = int(input_3)
+      input_4 = int(input_4)
+      window_width = input_3
+      window_height = input_4
 
-  try:
-    input_3 = int(input_3)
-    input_4 = int(input_4)
-    window_width = input_3
-    window_height = input_4
-    window_largest_dimension = input_4
-
-  except:
-    print('Resolucion invalida. Ejecutando con resolucion default (530x400).')
+    except:
+      print('Resolucion invalida. Ejecutando con resolucion default (530x400).')
 
 
 floor_color = (60, 40, 15)
@@ -47,7 +48,7 @@ player_speed = 10
 offset = 0
 
 if show_map:
-  offset = 500
+  offset = window_height
 
 
 pygame.init()
@@ -71,8 +72,8 @@ hand = pygame.image.load('./handaxe.png').convert()
 
 enemies = [
   {
-    "x": 100,
-    "y": 200,
+    "x": 175,
+    "y": 150,
     "texture": pygame.image.load('./sprite_2.png').convert()
   },
   {
@@ -81,8 +82,8 @@ enemies = [
     "texture": pygame.image.load('./sprite_3.png').convert()
   },
   {
-    "x": 320,
-    "y": 360,
+    "x": 150,
+    "y": 420,
     "texture": pygame.image.load('./sprite_1.png').convert()
   }
 ]
