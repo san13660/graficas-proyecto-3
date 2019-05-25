@@ -4,10 +4,15 @@
 import pygame
 from math import pi, cos, sin, atan2
 
+input_1 = input('Mostrar mapa? (s/n): ')
 
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-BACKGROUND = (0, 255, 255)
+show_map = False
+if input_1 == 's':
+  show_map = True
+
+
+floor_color = (60, 40, 15)
+ceiling_color = (60, 60, 60)
 
 window_width = 530
 window_height = 400
@@ -20,7 +25,6 @@ wall_height = 32
 
 player_speed = 10
 
-show_map = False
 offset = 0
 
 if show_map:
@@ -82,15 +86,10 @@ class Raycaster(object):
   def clear(self):
     for x in range(self.width):
       for y in range(self.height):
-        if y > self.height/2:
-          r = 60
-          g = 40
-          b = 15
+        if y > self.height/2 or (show_map and x < 500):
+          color = floor_color
         else:
-          r = 60
-          g = 60
-          b = 60
-        color = (r, g, b)
+          color = ceiling_color
         self.point(x, y, color)
 
   def point(self, x, y, c = None):
